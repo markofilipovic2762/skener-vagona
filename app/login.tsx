@@ -1,0 +1,178 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useNavigation } from "expo-router";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "./AuthContext";
+
+export default function LoginScreen() {
+  const { setUserToken } = useAuth();
+  const navigation = useNavigation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert("Greška", "Unesite korisničko ime i lozinku");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Replace with your actual authentication logic
+      // For demo purposes, we'll just simulate a login
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // In a real app, you would verify credentials with your backend
+      const fakeToken = "fake-auth-token";
+      await AsyncStorage.setItem("userToken", fakeToken);
+      setUserToken(fakeToken);
+      router.push("/");
+    } catch (error) {
+      console.error("Login error", error);
+      Alert.alert("Greška", "Pogrešno korisničko ime ili lozinka");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={authStyles.safeArea}>
+      <View style={authStyles.container}>
+        <View style={authStyles.logoContainer}>
+          <Ionicons name="train" size={60} color="#4A90E2" />
+          <Text style={authStyles.logoText}>Skener Vagona</Text>
+        </View>
+
+        <View style={authStyles.formContainer}>
+          <Text style={authStyles.label}>Korisničko ime</Text>
+          <TextInput
+            style={authStyles.input}
+            placeholder="Unesite korisničko ime"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+
+          <Text style={authStyles.label}>Lozinka</Text>
+          <TextInput
+            style={authStyles.input}
+            placeholder="Unesite lozinku"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <TouchableOpacity
+            style={authStyles.loginButton}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={authStyles.loginButtonText}>Prijavi se</Text>
+                <Ionicons name="log-in" size={20} color="#fff" />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={authStyles.footer}>
+          <Text style={authStyles.footerText}>
+            © 2025 Skener Vagona App. Kancelarija za razvoj aplikacija HBIS.
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Auth Screen Styles
+const authStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F5F7FA",
+  },
+  container: {
+    flex: 1,
+    padding: 24,
+    backgroundColor: "#F5F7FA",
+    justifyContent: "space-between",
+  },
+
+  logoContainer: {
+    alignItems: "center",
+    marginTop: 60,
+    marginBottom: 40,
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginTop: 16,
+  },
+  formContainer: {
+    marginBottom: 40,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4B5563",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 16,
+    fontSize: 16,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  loginButton: {
+    backgroundColor: "#4A90E2",
+    padding: 16,
+    borderRadius: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  loginButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 8,
+  },
+  footer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  footerText: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+});
