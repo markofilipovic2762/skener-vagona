@@ -1,7 +1,7 @@
-import { getKompozicije, getVagoni } from "@/api/api";
+import { getKompozicije } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,15 +11,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../AuthContext";
 
-export default function HomeScreen() {
+export default function BarzaScreen() {
   const { userToken, setUserToken } = useAuth();
   const router = useRouter();
   const [brojUtovara, setBrojUtovara] = useState<string[]>([]);
   const [selectedBrojUtovara, setSelectedBrojUtovara] = useState<string>("");
-  const [vagoni, setVagoni] = useState([]);
-  const [selectedVagon, setSelectedVagon] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,29 +41,11 @@ export default function HomeScreen() {
     fetchBrojUtovara();
   }, []);
 
-  useEffect(() => {
-    const fetchVagoni = async () => {
-      if (selectedBrojUtovara) {
-        setLoading(true);
-        try {
-          const vagoni = await getVagoni(selectedBrojUtovara);
-          setVagoni(vagoni);
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchVagoni();
-  }, [selectedBrojUtovara]);
-
   const handleContinue = () => {
-    if (selectedBrojUtovara && selectedVagon) {
+    if (selectedBrojUtovara) {
       router.push({
         pathname: "/scan",
         params: {
-          vagon: selectedVagon,
           bu: selectedBrojUtovara,
         },
       });
@@ -76,7 +56,7 @@ export default function HomeScreen() {
     <SafeAreaView style={homeStyles.safeArea}>
       <View style={homeStyles.container}>
         <View style={homeStyles.header}>
-          <Text style={homeStyles.title}>Skener vagona</Text>
+          <Text style={homeStyles.title}>Skenerija baržu</Text>
         </View>
 
         {loading ? (
@@ -111,36 +91,9 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {selectedBrojUtovara && (
-              <View style={homeStyles.inputContainer}>
-                <Text style={homeStyles.label}>Vagon</Text>
-                <View style={homeStyles.pickerContainer}>
-                  <Picker
-                    selectedValue={selectedVagon}
-                    onValueChange={setSelectedVagon}
-                    style={homeStyles.picker}
-                    dropdownIconColor="#666"
-                    enabled={!!selectedBrojUtovara}
-                  >
-                    <Picker.Item
-                      label="Selektuj vagon"
-                      value=""
-                      style={homeStyles.pickerItem}
-                    />
-                    {vagoni?.map((val) => (
-                      <Picker.Item
-                        key={val}
-                        label={val}
-                        value={val}
-                        style={homeStyles.pickerItem}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            )}
+            
 
-            {selectedBrojUtovara && selectedVagon && (
+            {selectedBrojUtovara && (
               <TouchableOpacity
                 style={homeStyles.continueButton}
                 onPress={handleContinue}

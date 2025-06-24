@@ -103,12 +103,12 @@ export default function LoginScreen() {
 const authStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#1E293B",
   },
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#1E293B",
     justifyContent: "space-between",
   },
 
@@ -118,9 +118,9 @@ const authStyles = StyleSheet.create({
     marginBottom: 40,
   },
   logoText: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#1F2937",
+    color: "#fff",
     marginTop: 16,
   },
   formContainer: {
@@ -129,7 +129,7 @@ const authStyles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#4B5563",
+    color: "#d1d5db",
     marginBottom: 8,
   },
   input: {

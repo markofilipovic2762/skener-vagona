@@ -1,4 +1,4 @@
-import { getGreske, getProizvodi, posaljiProizvode } from "@/api/api";
+import { getProizvodi } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -15,15 +15,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useVagonState } from "./VagonContext";
-import { Picker } from "@react-native-picker/picker";
 
-export default function ScanScreen() {
-  const kontrolor = "fil5672";
-  const { setVagoni } = useVagonState();
+export default function ScanBarzaScreen() {
   const navigation = useNavigation();
-  const route = useRouter();
-  const { vagon, grupa } = useLocalSearchParams<{ vagon: string, grupa: string }>();
+  const { bu } = useLocalSearchParams<{ bu: string }>();
   const [productList, setProductList] = useState<string[]>([]);
   const [scannerValue, setScannerValue] = useState("");
   const [scanFeedback, setScanFeedback] = useState("");
@@ -33,62 +28,31 @@ export default function ScanScreen() {
   const [damagedProducts, setDamagedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [greske, setGreske] = useState([]);
-  const [selectedGrupa, setSelectedGrupa] = useState("");
-  const [filteredGreske, setFilteredGreske] = useState([]);
-  const [selectedOpis, setSelectedOpis] = useState("");
-
   const scannerInputRef = useRef<TextInput>(null);
 
-  const sveGrupe = [...new Set(greske.map((g: any) => g.polje02))];
-
-  useEffect(() => {
-    const fetchProizvodi = async () => {
-      if (vagon) {
-        setLoading(true);
-        try {
-          const proizvodi = await getProizvodi(vagon);
-          setProductList(proizvodi);
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchProizvodi();
-  }, [vagon]);
+  //izmeni ovde 
+//   useEffect(() => {
+//     const fetchProizvodi = async () => {
+//       if (vagon) {
+//         setLoading(true);
+//         try {
+//           const proizvodi = await getProizvodi(vagon);
+//           setProductList(proizvodi);
+//         } catch (error) {
+//           console.error(error);
+//         } finally {
+//           setLoading(false);
+//         }
+//       }
+//     };
+//     fetchProizvodi();
+//   }, [vagon]);
 
   useEffect(() => {
     if (productList?.length > 0 && scannerInputRef.current) {
       scannerInputRef.current.focus();
     }
   }, [productList]);
-
-  useEffect(() => {
-    if (modalVisible) {
-      fetchGreske();
-    }
-  }, [modalVisible]);
-
-  const fetchGreske = async () => {
-    try {
-      const res = await getGreske(); // pozovi svoj API ovde
-      setGreske(res.greske);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedGrupa) {
-      const filtered = greske.filter((g : any) => g.polje02 === selectedGrupa);
-      setFilteredGreske(filtered);
-      setSelectedOpis(""); // resetuj prethodni opis
-    }
-  }, [selectedGrupa]);
-
-
 
   const handleScan = () => {
     const scannedCode = scannerValue.trim();
@@ -117,14 +81,9 @@ export default function ScanScreen() {
     }
   };
 
-  const handleSubmit = async () => {
-    const response = await posaljiProizvode(scannedProducts, kontrolor, vagon);
-    console.log(response);
-    alert(
-      `Poslato ${scannedProducts.length}! Oštećeni: ${damagedProducts.length}`
-    );
-    setProductList([]);
-    setTimeout(() => navigation.goBack(), 2000);
+  const handleSubmit = () => {
+    alert(`Poslato! Oštećeni: ${damagedProducts.length}`);
+    navigation.goBack();
   };
 
   const remainingCount = productList?.length - scannedProducts?.length;
@@ -142,7 +101,9 @@ export default function ScanScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={scanStyles.title}>{vagon}</Text>
+          <Text style={scanStyles.title}>
+            {bu}  Skeniranje proizvoda za baržu
+          </Text>
           <View style={{ width: 24 }} /> {/* Spacer for alignment */}
         </View>
 
@@ -306,52 +267,16 @@ export default function ScanScreen() {
         >
           <View style={scanStyles.modalOverlay}>
             <View style={scanStyles.modalContent}>
-              <Text style={scanStyles.modalTitle}>Obeleži kao ostecen</Text>
+              <Text style={scanStyles.modalTitle}>Obeleži proizvod</Text>
               <Text style={scanStyles.modalProductName}>{selectedProduct}</Text>
-
-              <View style={scanStyles.dropdownContainer}>
-                <Text style={scanStyles.label}>Grupa greške</Text>
-                <Picker
-                  selectedValue={selectedGrupa}
-                  onValueChange={(itemValue) => setSelectedGrupa(itemValue)}
-                >
-                  <Picker.Item label="Izaberi grupu" value="" />
-                  {sveGrupe.map((grupa) => (
-                    <Picker.Item key={grupa} label={grupa} value={grupa} />
-                  ))}
-                </Picker>
-
-                {selectedGrupa !== "" && (
-                  <>
-                    <Text style={scanStyles.label}>Opis greške</Text>
-                    <Picker
-                      selectedValue={selectedOpis}
-                      onValueChange={(itemValue) => setSelectedOpis(itemValue)}
-                    >
-                      <Picker.Item label="Izaberi opis" value="" />
-                      {filteredGreske.map((g: any, idx) => (
-                        <Picker.Item
-                          key={idx}
-                          label={g.polje04}
-                          value={g.polje04}
-                        />
-                      ))}
-                    </Picker>
-                  </>
-                )}
-              </View>
+              <Text style={scanStyles.modalProductCode}>{selectedProduct}</Text>
 
               <View style={scanStyles.modalButtons}>
                 <TouchableOpacity
                   style={[scanStyles.modalButton, scanStyles.damageButton]}
                   onPress={() => {
                     if (selectedProduct) {
-                      const greskaObj = {
-                        proizvod: selectedProduct,
-                        grupa: selectedGrupa,
-                        opis: selectedOpis,
-                      };
-                      setDamagedProducts((prev: any) => [...prev, greskaObj]);
+                      setDamagedProducts((prev) => [...prev, selectedProduct]);
                     }
                     setModalVisible(false);
                   }}
@@ -567,64 +492,54 @@ const scanStyles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    width: "90%",
-    elevation: 5,
+    backgroundColor: "white",
+    padding: 24,
+    borderRadius: 16,
+    width: "85%",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#1F2937",
+    marginBottom: 8,
     textAlign: "center",
   },
   modalProductName: {
     fontSize: 16,
-    marginBottom: 20,
+    fontWeight: "600",
+    color: "#1F2937",
     textAlign: "center",
-    color: "#444",
+    marginBottom: 4,
+  },
+  modalProductCode: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
   },
   modalButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 8,
     flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: "row",
     justifyContent: "center",
-    marginHorizontal: 5,
+    alignItems: "center",
   },
   damageButton: {
-    backgroundColor: "#d9534f",
+    backgroundColor: "#EF4444",
+    marginRight: 8,
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#E5E7EB",
   },
   modalButtonText: {
-    color: "#fff",
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  dropdownContainer: {
-    marginBottom: 10,
-  },
-  label: {
+    color: "#3F3F3F",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
-    color: "#333",
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    color: "#333",
+    marginLeft: 8,
   },
 });

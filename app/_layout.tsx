@@ -1,3 +1,5 @@
+import { useColorScheme } from "@/hooks/useColorScheme";
+import NetInfo from "@react-native-community/netinfo";
 import {
   DarkTheme,
   DefaultTheme,
@@ -6,13 +8,11 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
-import { ActivityIndicator } from "react-native";
-import NetInfo from "@react-native-community/netinfo";
+import { ActivityIndicator, View } from "react-native";
+import "react-native-reanimated";
 import AuthProvider, { useAuth } from "./AuthContext";
+import { StateProvider } from "./VagonContext";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,7 +26,10 @@ export default function RootLayout() {
   useEffect(() => {
     const checkNetwork = async () => {
       const state = await NetInfo.fetch();
-      setIsConnected(state.isConnected && state.type === "wifi" && state.details.ssid == "secure");
+      setIsConnected(
+        state.isConnected && state.type === "wifi"
+        // state.details.ssid == "secure"
+      );
       setIsLoading(false);
     };
 
@@ -63,24 +66,21 @@ export default function RootLayout() {
     );
   }
 
-  const { userToken } = useAuth();
-
   return (
     <AuthProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <StateProvider>
         <Stack>
-          {userToken ? (
-            <>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="scan" options={{ headerShown: false }} />
-            </>
-          ) : (
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-          )}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="scan" options={{ headerShown: false }} />
+          <Stack.Screen name="scan-barza" options={{ headerShown: false }} />
+
+          <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
           <Stack.Screen name="no-network" />
         </Stack>
         <StatusBar style="auto" />
+        </StateProvider>
       </ThemeProvider>
     </AuthProvider>
   );
