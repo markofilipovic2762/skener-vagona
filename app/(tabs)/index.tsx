@@ -26,14 +26,14 @@ export default function HomeScreen() {
 
   const [selectedVagon, setSelectedVagon] = useState("");
   const [loading, setLoading] = useState(false);
-  const [grupa,setGrupa] = useState("")
+  const [grupa, setGrupa] = useState("");
 
-  useEffect(()=>{
-    if(selectedVagon){
+  useEffect(() => {
+    if (selectedVagon) {
       const found = vagoni.find((v) => v.regis === selectedVagon);
-      setGrupa(String(found?.grupa))
+      setGrupa(String(found?.grupa));
     }
-  },[selectedVagon])
+  }, [selectedVagon]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -71,7 +71,7 @@ export default function HomeScreen() {
         pathname: "/scan",
         params: {
           vagon: selectedVagon,
-          grupa
+          grupa,
         },
       });
     }
@@ -92,6 +92,12 @@ export default function HomeScreen() {
         {loading ? (
           <View style={homeStyles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
+          </View>
+        ) : vagoni.length === 0 ? (
+          <View>
+            <Text style={{ color: "white", fontSize: 24 }}>
+              Nema vagona za skeniranje
+            </Text>
           </View>
         ) : (
           <>

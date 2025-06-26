@@ -22,6 +22,13 @@ export const getProizvodi = (registracija: string) => {
     .catch((error) => console.error(error));
 };
 
+export const getBarzaProizvodi = () => {
+  return fetch(`${apiUrl}/barza`)
+    .then((response) => response.json())
+    .then((json) => json.kljucevi)
+    .catch((error) => console.error(error));
+};
+
 export const getGreske = () => {
   return fetch(`${apiUrl}/spisak_gresaka`)
     .then((response) => response.json())
@@ -40,6 +47,27 @@ export const posaljiProizvode = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ kluc: skeniraniProizvodi, kontrolor, vagon }),
+    });
+    return response.json();
+  } catch (error) {
+    alert(error);
+  }
+};
+
+export const posaljiBarzaProizvode = async (
+  skeniraniProizvodi: string[],
+  kontrolor: string
+) => {
+  try {
+    const response = await fetch(`${apiUrl}/kontrola_barza`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        kljucevi: skeniraniProizvodi,
+        popisivac: kontrolor,
+      }),
     });
     return response.json();
   } catch (error) {

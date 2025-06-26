@@ -416,6 +416,7 @@ export default function ScanScreen() {
                           ]);
                           setSelectedGrupa("");
                           setSelectedOpis("");
+                          setSelectedProduct("");
                         } catch (error) {
                           alert(error);
                         }
