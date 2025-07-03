@@ -19,52 +19,52 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/Poppins-Regular.ttf"),
   });
-  const [isLoading, setIsLoading] = useState(true);
+  //const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
-  // Check network status
-  useEffect(() => {
-    const checkNetwork = async () => {
-      const state = await NetInfo.fetch();
-      setIsConnected(
-        state.isConnected && state.type === "wifi"
-        // state.details.ssid == "secure"
-      );
-      setIsLoading(false);
-    };
+  // // Check network status
+  // useEffect(() => {
+  //   const checkNetwork = async () => {
+  //     const state = await NetInfo.fetch();
+  //     setIsConnected(
+  //       state.isConnected && state.type === "wifi"
+  //       // state.details.ssid == "secure"
+  //     );
+  //     setIsLoading(false);
+  //   };
 
-    checkNetwork();
+  //   checkNetwork();
 
-    // Subscribe to network changes
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsConnected(state.isConnected && state.type === "wifi");
-    });
+  //   // Subscribe to network changes
+  //   const unsubscribe = NetInfo.addEventListener((state) => {
+  //     setIsConnected(state.isConnected && state.type === "wifi");
+  //   });
 
-    return () => unsubscribe();
-  }, []);
+  //   return () => unsubscribe();
+  // }, []);
 
-  if (!loaded || isLoading || isConnected === null) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#F5F7FA",
-        }}
-      >
-        <ActivityIndicator size="large" color="#4A90E2" />
-      </View>
-    );
-  }
+  // if (!loaded || isLoading || isConnected === null) {
+  //   return (
+  //     <View
+  //       style={{
+  //         flex: 1,
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         backgroundColor: "#F5F7FA",
+  //       }}
+  //     >
+  //       <ActivityIndicator size="large" color="#4A90E2" />
+  //     </View>
+  //   );
+  // }
 
-  if (!isConnected) {
-    return (
-      <Stack>
-        <Stack.Screen name="no-network" options={{ headerShown: false }} />
-      </Stack>
-    );
-  }
+  // if (!isConnected) {
+  //   return (
+  //     <Stack>
+  //       <Stack.Screen name="no-network" options={{ headerShown: false }} />
+  //     </Stack>
+  //   );
+  // }
 
   return (
     <AuthProvider>
@@ -73,7 +73,6 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="scan" options={{ headerShown: false }} />
-          <Stack.Screen name="scan-barza" options={{ headerShown: false }} />
 
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />

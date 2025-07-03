@@ -27,9 +27,6 @@ export default function Barza() {
   const [scannerValue, setScannerValue] = useState("");
   const [scanFeedback, setScanFeedback] = useState("");
   const [scannedProducts, setScannedProducts] = useState<string[]>([]);
-  // const [modalVisible, setModalVisible] = useState(false);
-  // const [selectedProduct, setSelectedProduct] = useState<string>("");
-  // const [damagedProducts, setDamagedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const kontrolor = "fil5672";
@@ -95,10 +92,14 @@ export default function Barza() {
         type: ALERT_TYPE.SUCCESS,
         title: "Uspešno poslato",
         textBody: `Ukupno skeniranih proizvoda: ${scannedProducts.length}`,
+        autoClose: 2000,
       });
-      setScannedProducts([]);
-      setProductList([]);
-      setTimeout(() => router.push("/"), 3000);
+
+      setTimeout(() => {
+        setScannedProducts([]);
+        setProductList([]);
+        router.push("/");
+      }, 3000);
     } catch (error: any) {
       console.error("Greška pri slanju proizvoda:", error);
       Toast.show({
@@ -126,7 +127,7 @@ export default function Barza() {
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={scanStyles.title}>Skeniranje barže</Text>
-            <View style={{ width: 24 }} /> {/* Spacer for alignment */}
+            <View style={{ width: 24 }} />
           </View>
 
           {loading ? (
@@ -135,7 +136,6 @@ export default function Barza() {
             </View>
           ) : (
             <>
-              {/* Products */}
               {productList?.length > 0 ? (
                 <View style={scanStyles.productsContainer}>
                   <View style={scanStyles.productsHeader}>
@@ -151,21 +151,15 @@ export default function Barza() {
                     style={scanStyles.productsScroll}
                     contentContainerStyle={scanStyles.productsScrollContent}
                   >
-                    {productList.map((p, index) => {
+                    {productList?.map((p, index) => {
                       const isScanned = scannedProducts.includes(p);
-                      //const isDamaged = damagedProducts.includes(p);
                       return (
                         <TouchableOpacity
                           key={index}
                           style={[
                             scanStyles.card,
                             isScanned && scanStyles.scannedCard,
-                            //isDamaged && scanStyles.damagedCard,
                           ]}
-                          // onLongPress={() => {
-                          //   setSelectedProduct(p);
-                          //   setModalVisible(true);
-                          // }}
                           activeOpacity={0.8}
                         >
                           <View style={scanStyles.cardContent}>
@@ -192,23 +186,16 @@ export default function Barza() {
                               />
                             </View>
                           )}
-                          {/* {isDamaged && (
-                            <View style={scanStyles.statusIcon}>
-                              <Ionicons
-                                name="alert-circle"
-                                size={24}
-                                color="#EF4444"
-                              />
-                            </View>
-                          )} */}
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
                 </View>
-              ): (
+              ) : (
                 <View>
-                  <Text style={{ color: 'white', fontSize: 24}}>Nema proizvoda za skeniranje</Text>
+                  <Text style={{ color: "white", fontSize: 24 }}>
+                    Nema proizvoda za skeniranje
+                  </Text>
                 </View>
               )}
 
@@ -291,49 +278,6 @@ export default function Barza() {
                 )}
             </>
           )}
-
-          {/* <Modal
-            visible={modalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={scanStyles.modalOverlay}>
-              <View style={scanStyles.modalContent}>
-                <Text style={scanStyles.modalTitle}>Obeleži proizvod</Text>
-                <Text style={scanStyles.modalProductName}>
-                  {selectedProduct}
-                </Text>
-                <Text style={scanStyles.modalProductCode}>
-                  {selectedProduct}
-                </Text>
-
-                <View style={scanStyles.modalButtons}>
-                  <TouchableOpacity
-                    style={[scanStyles.modalButton, scanStyles.damageButton]}
-                    onPress={() => {
-                      if (selectedProduct) {
-                        setDamagedProducts((prev) => [
-                          ...prev,
-                          selectedProduct,
-                        ]);
-                      }
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Ionicons name="alert-circle" size={20} color="#fff" />
-                    <Text style={scanStyles.modalButtonText}>Oštećen</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[scanStyles.modalButton, scanStyles.cancelButton]}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={scanStyles.modalButtonText}>Otkaži</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal> */}
         </KeyboardAvoidingView>
       </AlertNotificationRoot>
     </SafeAreaView>

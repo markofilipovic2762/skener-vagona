@@ -1,6 +1,7 @@
+import { login } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router, useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -15,7 +16,8 @@ import {
 import { useAuth } from "./AuthContext";
 
 export default function LoginScreen() {
-  const { setUserToken } = useAuth();
+  const router = useRouter();
+  // const { setIsAuthenticated } = useAuth();
   const navigation = useNavigation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,14 +31,14 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      // Replace with your actual authentication logic
-      // For demo purposes, we'll just simulate a login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await login(username, password);
+      console.log("Login response:", response);
 
-      // In a real app, you would verify credentials with your backend
-      const fakeToken = "fake-auth-token";
-      await AsyncStorage.setItem("userToken", fakeToken);
-      setUserToken(fakeToken);
+      await AsyncStorage.setItem("userToken", response.accessToken);
+      // if (setIsAuthenticated) {
+      //   setIsAuthenticated(true);
+      // }
+      // setUserToken(fakeToken);
       router.push("/");
     } catch (error) {
       console.error("Login error", error);

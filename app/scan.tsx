@@ -50,7 +50,7 @@ export default function ScanScreen() {
 
   const scannerInputRef = useRef<TextInput>(null);
 
-  const sveGrupe = [...new Set(greske.map((g: any) => g.opis))];
+  const sveGrupe = [...new Set(greske?.map((g: any) => g.opis))];
 
   useEffect(() => {
     const fetchProizvodi = async () => {
@@ -92,7 +92,7 @@ export default function ScanScreen() {
 
   useEffect(() => {
     if (selectedGrupa) {
-      const filtered = greske.filter((g: any) => g.opis === selectedGrupa);
+      const filtered = greske?.filter((g: any) => g.opis === selectedGrupa);
       setFilteredGreske(filtered);
       setSelectedOpis(""); // resetuj prethodni opis
     }
@@ -202,7 +202,7 @@ export default function ScanScreen() {
                     style={scanStyles.productsScroll}
                     contentContainerStyle={scanStyles.productsScrollContent}
                   >
-                    {productList.map((p, index) => {
+                    {productList?.map((p, index) => {
                       const isScanned = scannedProducts.includes(p);
                       const isDamaged = damagedProducts.includes(p);
                       return (
@@ -358,7 +358,7 @@ export default function ScanScreen() {
                     onValueChange={(itemValue) => setSelectedGrupa(itemValue)}
                   >
                     <Picker.Item label="Izaberi grupu" value="" />
-                    {sveGrupe.map((grupa) => (
+                    {sveGrupe?.map((grupa) => (
                       <Picker.Item key={grupa} label={grupa} value={grupa} />
                     ))}
                   </Picker>
@@ -373,7 +373,7 @@ export default function ScanScreen() {
                         }
                       >
                         <Picker.Item label="Izaberi opis" value="" />
-                        {filteredGreske.map((g: any, idx) => (
+                        {filteredGreske?.map((g: any, idx) => (
                           <Picker.Item
                             key={idx}
                             label={g.sifra}
@@ -451,6 +451,7 @@ const scanStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    marginBottom: 25,
     backgroundColor: "#1E293B",
   },
   header: {
@@ -622,7 +623,7 @@ const scanStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    marginBottom: 10,
+    //marginBottom: 25,
   },
   submitButtonText: {
     color: "#FFFFFF",

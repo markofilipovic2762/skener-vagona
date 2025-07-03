@@ -1,5 +1,6 @@
-const apiUrl = "http://10.21.57.45:8000";
+//const apiUrl = "http://10.21.57.48:8000";
 // const apiUrl = "http://10.21.59.30:8000";
+const apiUrl = "http://python.zelsd.rs:8086";
 
 export const getKompozicije = () => {
   return fetch(`${apiUrl}/kompozicije`)
@@ -89,6 +90,21 @@ export const posaljiGresku = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ kluc, regis, grupa, napomena, kontrolor }),
+    });
+    return response.json();
+  } catch (error) {
+    alert(error);
+  }
+};
+
+export const login = async (username: string, password: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
     });
     return response.json();
   } catch (error) {

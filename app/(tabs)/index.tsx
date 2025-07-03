@@ -17,7 +17,7 @@ import { useAuth } from "../AuthContext";
 import { useVagonState } from "../VagonContext";
 
 export default function HomeScreen() {
-  const { userToken, setUserToken } = useAuth();
+  // const { isAuthenticated } = useAuth();
   const { vagoni, setVagoni } = useVagonState();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -27,6 +27,12 @@ export default function HomeScreen() {
   const [selectedVagon, setSelectedVagon] = useState("");
   const [loading, setLoading] = useState(false);
   const [grupa, setGrupa] = useState("");
+
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     router.replace("/login");
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (selectedVagon) {
@@ -52,12 +58,6 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!userToken) {
-      router.replace("/login");
-    }
-  }, [userToken]);
 
   useFocusEffect(
     useCallback(() => {

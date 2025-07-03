@@ -6,7 +6,7 @@ interface VagonContextType {
   setVagoni: React.Dispatch<React.SetStateAction<Vagon[]>>;
 }
 
-const VagonContext = createContext<VagonContextType>({
+ const VagonContext = createContext<VagonContextType>({
   vagoni: [],
   setVagoni: () => {},
 });
