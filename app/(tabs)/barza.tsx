@@ -1,4 +1,5 @@
 import { getBarzaProizvodi, posaljiBarzaProizvode } from "@/api/api";
+import { useToken } from "@/hooks/useToken";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -29,7 +30,7 @@ export default function Barza() {
   const [scannedProducts, setScannedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const kontrolor = "fil5672";
+  const {userAd} = useToken()
 
   const scannerInputRef = useRef<TextInput>(null);
 
@@ -86,12 +87,12 @@ export default function Barza() {
 
   const handleSubmit = async () => {
     try {
-      const response = await posaljiBarzaProizvode(scannedProducts, kontrolor);
+      await posaljiBarzaProizvode(scannedProducts, userAd);
 
       Toast.show({
         type: ALERT_TYPE.SUCCESS,
         title: "Uspešno poslato",
-        textBody: `Ukupno skeniranih proizvoda: ${scannedProducts.length}`,
+        textBody: `Ukupno skeniranih proizvoda: ${scannedProducts?.length}`,
         autoClose: 2000,
       });
 
@@ -199,7 +200,6 @@ export default function Barza() {
                 </View>
               )}
 
-              {/* Scanner input */}
               {productList?.length > 0 && (
                 <View style={scanStyles.scannerContainer}>
                   {scanFeedback !== "" && (
@@ -235,7 +235,7 @@ export default function Barza() {
                       </Text>
                     </View>
                   )}
-                  {scannedProducts?.length != productList?.length && (
+                  {scannedProducts?.length !== productList?.length && (
                     <View style={scanStyles.scannerInputContainer}>
                       <TextInput
                         ref={scannerInputRef}
@@ -266,16 +266,15 @@ export default function Barza() {
                 </View>
               )}
 
-              {scannedProducts?.length === productList?.length &&
-                productList.length > 0 && (
-                  <TouchableOpacity
-                    style={scanStyles.submitButton}
-                    onPress={handleSubmit}
-                  >
-                    <Text style={scanStyles.submitButtonText}>Pošalji</Text>
-                    <Ionicons name="send" size={20} color="#fff" />
-                  </TouchableOpacity>
-                )}
+              {scannedProducts?.length > 0 && (
+                <TouchableOpacity
+                  style={scanStyles.submitButton}
+                  onPress={handleSubmit}
+                >
+                  <Text style={scanStyles.submitButtonText}>Pošalji</Text>
+                  <Ionicons name="send" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
             </>
           )}
         </KeyboardAvoidingView>

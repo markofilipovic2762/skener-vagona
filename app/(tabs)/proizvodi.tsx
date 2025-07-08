@@ -1,17 +1,10 @@
-import {
-  getGreske,
-  getProizvodi,
-  posaljiGresku,
-  posaljiProizvode,
-} from "@/api/api";
+import { getBarzaProizvodi, posaljiBarzaProizvode } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
-import { useLocalSearchParams, useNavigation } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -27,76 +20,42 @@ import {
   Toast,
 } from "react-native-alert-notification";
 
-export default function ScanScreen() {
-  const kontrolor = "fil5672";
+export default function Barza() {
   const navigation = useNavigation();
-  const { vagon, grupa } = useLocalSearchParams<{
-    vagon: string;
-    grupa: string;
-  }>();
+  const router = useRouter();
   const [productList, setProductList] = useState<string[]>([]);
   const [scannerValue, setScannerValue] = useState("");
   const [scanFeedback, setScanFeedback] = useState("");
   const [scannedProducts, setScannedProducts] = useState<string[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [damagedProducts, setDamagedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [greske, setGreske] = useState([]);
-  const [selectedGrupa, setSelectedGrupa] = useState("");
-  const [filteredGreske, setFilteredGreske] = useState([]);
-  const [selectedOpis, setSelectedOpis] = useState("");
+  const kontrolor = "fil5672";
 
   const scannerInputRef = useRef<TextInput>(null);
 
-  const sveGrupe = [...new Set(greske?.map((g: any) => g.opis))];
+  const fetchProizvodi = async () => {
+    setLoading(true);
+    try {
+      const proizvodi = await getBarzaProizvodi();
+      setProductList(proizvodi);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    const fetchProizvodi = async () => {
-      if (vagon) {
-        setLoading(true);
-        try {
-          const proizvodi = await getProizvodi(vagon);
-          setProductList(proizvodi);
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchProizvodi();
-  }, [vagon]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProizvodi();
+    }, [])
+  );
 
   useEffect(() => {
     if (productList?.length > 0 && scannerInputRef.current) {
       scannerInputRef.current.focus();
     }
   }, [productList]);
-
-  useEffect(() => {
-    if (modalVisible) {
-      fetchGreske();
-    }
-  }, [modalVisible]);
-
-  const fetchGreske = async () => {
-    try {
-      const res = await getGreske();
-      setGreske(res.greske);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedGrupa) {
-      const filtered = greske?.filter((g: any) => g.opis === selectedGrupa);
-      setFilteredGreske(filtered);
-      setSelectedOpis("");
-    }
-  }, [selectedGrupa, greske]);
 
   const handleScan = () => {
     const scannedCode = scannerValue.trim();
@@ -127,20 +86,20 @@ export default function ScanScreen() {
 
   const handleSubmit = async () => {
     try {
-      await posaljiProizvode(
-        scannedProducts,
-        kontrolor,
-        vagon
-      );
+      await posaljiBarzaProizvode(scannedProducts, kontrolor);
 
       Toast.show({
         type: ALERT_TYPE.SUCCESS,
         title: "Uspešno poslato",
-        textBody: `Ukupno skeniranih proizvoda: ${scannedProducts?.length}, oštećenih: ${damagedProducts?.length}`,
+        textBody: `Ukupno skeniranih proizvoda: ${scannedProducts?.length}`,
+        autoClose: 2000,
       });
-      setScannedProducts([]);
-      setProductList([]);
-      setTimeout(() => navigation.goBack(), 3000);
+
+      setTimeout(() => {
+        setScannedProducts([]);
+        setProductList([]);
+        router.push("/");
+      }, 3000);
     } catch (error: any) {
       console.error("Greška pri slanju proizvoda:", error);
       Toast.show({
@@ -150,7 +109,6 @@ export default function ScanScreen() {
       });
     }
   };
-
 
   const remainingCount = productList?.length - scannedProducts?.length;
 
@@ -168,7 +126,7 @@ export default function ScanScreen() {
             >
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={scanStyles.title}>{vagon}</Text>
+            <Text style={scanStyles.title}>Skeniranje barže</Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -178,7 +136,7 @@ export default function ScanScreen() {
             </View>
           ) : (
             <>
-              {productList?.length > 0 && (
+              {productList?.length > 0 ? (
                 <View style={scanStyles.productsContainer}>
                   <View style={scanStyles.productsHeader}>
                     <Text style={scanStyles.subtitle}>Proizvodi</Text>
@@ -195,19 +153,13 @@ export default function ScanScreen() {
                   >
                     {productList?.map((p, index) => {
                       const isScanned = scannedProducts.includes(p);
-                      const isDamaged = damagedProducts.includes(p);
                       return (
                         <TouchableOpacity
                           key={index}
                           style={[
                             scanStyles.card,
                             isScanned && scanStyles.scannedCard,
-                            isDamaged && scanStyles.damagedCard,
                           ]}
-                          onLongPress={() => {
-                            setSelectedProduct(p);
-                            setModalVisible(true);
-                          }}
                           activeOpacity={0.8}
                         >
                           <View style={scanStyles.cardContent}>
@@ -234,19 +186,16 @@ export default function ScanScreen() {
                               />
                             </View>
                           )}
-                          {isDamaged && (
-                            <View style={scanStyles.statusIcon}>
-                              <Ionicons
-                                name="alert-circle"
-                                size={24}
-                                color="#EF4444"
-                              />
-                            </View>
-                          )}
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
+                </View>
+              ) : (
+                <View>
+                  <Text style={{ color: "white", fontSize: 24 }}>
+                    Nema proizvoda za skeniranje
+                  </Text>
                 </View>
               )}
 
@@ -316,7 +265,7 @@ export default function ScanScreen() {
                 </View>
               )}
 
-              {scannedProducts?.length !== 0 && productList?.length > 0 && (
+              {scannedProducts?.length > 0 && (
                 <TouchableOpacity
                   style={scanStyles.submitButton}
                   onPress={handleSubmit}
@@ -327,106 +276,6 @@ export default function ScanScreen() {
               )}
             </>
           )}
-
-          <Modal
-            visible={modalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={scanStyles.modalOverlay}>
-              <View style={scanStyles.modalContent}>
-                <Text style={scanStyles.modalTitle}>Obeleži kao oštećen</Text>
-                <Text style={scanStyles.modalProductName}>
-                  {selectedProduct}
-                </Text>
-
-                <View style={scanStyles.dropdownContainer}>
-                  <Text style={scanStyles.label}>Grupa greške</Text>
-                  <Picker
-                    selectedValue={selectedGrupa}
-                    onValueChange={(itemValue) => setSelectedGrupa(itemValue)}
-                  >
-                    <Picker.Item label="Izaberi grupu" value="" />
-                    {sveGrupe?.map((grupa) => (
-                      <Picker.Item key={grupa} label={grupa} value={grupa} />
-                    ))}
-                  </Picker>
-
-                  {selectedGrupa !== "" && (
-                    <>
-                      <Text style={scanStyles.label}>Opis greške</Text>
-                      <Picker
-                        selectedValue={selectedOpis}
-                        onValueChange={(itemValue) =>
-                          setSelectedOpis(itemValue)
-                        }
-                      >
-                        <Picker.Item label="Izaberi opis" value="" />
-                        {filteredGreske?.map((g: any, idx) => (
-                          <Picker.Item
-                            key={idx}
-                            label={g.sifra}
-                            value={g.sifra}
-                          />
-                        ))}
-                      </Picker>
-                    </>
-                  )}
-                </View>
-
-                <View style={scanStyles.modalButtons}>
-                  <TouchableOpacity
-                    style={[scanStyles.modalButton, scanStyles.damageButton]}
-                    onPress={async () => {
-                      if (selectedProduct && selectedOpis) {
-                        const greskaObj = {
-                          kluc: selectedProduct,
-                          regis: vagon,
-                          grupa: Number(grupa),
-                          napomena: selectedOpis,
-                          kontrolor,
-                        };
-                        try {
-                          await posaljiGresku(
-                            greskaObj.kluc,
-                            greskaObj.regis,
-                            greskaObj.grupa,
-                            greskaObj.napomena,
-                            greskaObj.kontrolor
-                          );
-                          Toast.show({
-                            type: ALERT_TYPE.SUCCESS,
-                            title: "Uspešno poslato",
-                            textBody: `Oštećen proizvod: ${greskaObj.kluc}`,
-                          });
-                          setDamagedProducts((prev: any) => [
-                            ...prev,
-                            greskaObj.kluc,
-                          ]);
-                          setSelectedGrupa("");
-                          setSelectedOpis("");
-                          setSelectedProduct("");
-                        } catch (error) {
-                          alert(error);
-                        }
-                      }
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Ionicons name="alert-circle" size={20} color="#fff" />
-                    <Text style={scanStyles.modalButtonText}>Oštećen</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[scanStyles.modalButton, scanStyles.cancelButton]}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={scanStyles.modalButtonText}>Otkaži</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
         </KeyboardAvoidingView>
       </AlertNotificationRoot>
     </SafeAreaView>
@@ -441,7 +290,6 @@ const scanStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginBottom: 25,
     backgroundColor: "#1E293B",
   },
   header: {
@@ -458,10 +306,10 @@ const scanStyles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#afaf3f",
-    textAlign: "center",
+    textAlign: "auto",
   },
   loadingContainer: {
     flex: 1,
@@ -613,7 +461,6 @@ const scanStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    //marginBottom: 25,
   },
   submitButtonText: {
     color: "#FFFFFF",
@@ -628,64 +475,54 @@ const scanStyles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    width: "90%",
-    elevation: 5,
+    backgroundColor: "white",
+    padding: 24,
+    borderRadius: 16,
+    width: "85%",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#1F2937",
+    marginBottom: 8,
     textAlign: "center",
   },
   modalProductName: {
     fontSize: 16,
-    marginBottom: 20,
+    fontWeight: "600",
+    color: "#1F2937",
     textAlign: "center",
-    color: "#444",
+    marginBottom: 4,
+  },
+  modalProductCode: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 24,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
   },
   modalButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 8,
     flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: "row",
     justifyContent: "center",
-    marginHorizontal: 5,
+    alignItems: "center",
   },
   damageButton: {
-    backgroundColor: "#d9534f",
+    backgroundColor: "#EF4444",
+    marginRight: 8,
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#E5E7EB",
   },
   modalButtonText: {
-    color: "#fff",
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  dropdownContainer: {
-    marginBottom: 10,
-  },
-  label: {
+    color: "#3F3F3F",
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 4,
-    color: "#333",
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    color: "#333",
+    marginLeft: 8,
   },
 });

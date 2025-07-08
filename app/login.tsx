@@ -1,7 +1,7 @@
 import { login } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,15 +13,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "./AuthContext";
 
 export default function LoginScreen() {
   const router = useRouter();
-  // const { setIsAuthenticated } = useAuth();
-  const navigation = useNavigation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  AsyncStorage.getItem("userToken").then((token) =>
+    console.log("UserToken: ", token)
+  );
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -32,17 +33,18 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       const response = await login(username, password);
-      console.log("Login response:", response);
 
-      await AsyncStorage.setItem("userToken", response.accessToken);
-      // if (setIsAuthenticated) {
-      //   setIsAuthenticated(true);
-      // }
-      // setUserToken(fakeToken);
-      router.push("/");
+      console.log("Login response:", response);
+      console.log("AccessToken bez data: ", response.accessToken);
+      if (response.accessToken) {
+        await AsyncStorage.setItem("userToken", response.accessToken);
+        router.push("/");
+      } else {
+        Alert.alert("Greska", response.detail);
+      }
     } catch (error) {
       console.error("Login error", error);
-      Alert.alert("Greška", "Pogrešno korisničko ime ili lozinka");
+      Alert.alert("Greška", "Neuspelo prijavljivanje");
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +103,6 @@ export default function LoginScreen() {
   );
 }
 
-// Auth Screen Styles
 const authStyles = StyleSheet.create({
   safeArea: {
     flex: 1,

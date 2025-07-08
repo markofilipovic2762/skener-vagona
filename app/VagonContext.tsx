@@ -11,7 +11,7 @@ interface VagonContextType {
   setVagoni: () => {},
 });
 
-export function StateProvider({ children }: { children: any }) {
+export default function StateProvider({ children }: { children: any }) {
   const [vagoni, setVagoni] = useState<Vagon[]>([]);
 
   return (

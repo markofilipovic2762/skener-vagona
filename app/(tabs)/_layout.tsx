@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
 import React from "react";
-import AuthProvider from "../AuthContext";
+import { AuthProvider } from "../AuthContext";
 
 export default function TabLayout() {
   return (
@@ -33,6 +33,15 @@ export default function TabLayout() {
             title: "Barža",
             tabBarIcon: ({ color }) => (
               <Ionicons name="desktop-outline" size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="proizvodi"
+          options={{
+            title: "Proizvodi",
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="construct" size={24} color={color} />
             ),
           }}
         />

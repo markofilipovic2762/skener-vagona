@@ -1,7 +1,8 @@
 import { getVagoni } from "@/api/api";
+import { useToken } from "@/hooks/useToken";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,41 +14,33 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "../AuthContext";
 import { useVagonState } from "../VagonContext";
 
 export default function HomeScreen() {
-  // const { isAuthenticated } = useAuth();
+  const {authorized} = useToken();
   const { vagoni, setVagoni } = useVagonState();
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
-  const navigation = useNavigation();
 
   const [selectedVagon, setSelectedVagon] = useState("");
   const [loading, setLoading] = useState(false);
   const [grupa, setGrupa] = useState("");
 
-  // useEffect(() => {
-  //   if (!isAuthenticated) {
-  //     router.replace("/login");
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (authorized === false) {
+      router.replace("/login");
+    }
+  }, [authorized, router]);
 
   useEffect(() => {
     if (selectedVagon) {
       const found = vagoni.find((v) => v.regis === selectedVagon);
       setGrupa(String(found?.grupa));
     }
-  }, [selectedVagon]);
+  }, [selectedVagon, vagoni]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchVagoni();
-    setRefreshing(false);
-  };
-
-  const fetchVagoni = async () => {
+  const fetchVagoni = useCallback(async () => {
     setLoading(true);
     try {
       const vagoni = await getVagoni();
@@ -57,12 +50,29 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
+  }, [setVagoni]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchVagoni();
+    setRefreshing(false);
   };
 
   useFocusEffect(
     useCallback(() => {
-      fetchVagoni();
-    }, [])
+      setLoading(true);
+      const fetch = async () => {
+        try {
+          const vagoni = await getVagoni();
+          setVagoni(vagoni);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetch();
+    }, [setVagoni])
   );
 
   const handleContinue = () => {
@@ -93,7 +103,7 @@ export default function HomeScreen() {
           <View style={homeStyles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
           </View>
-        ) : vagoni.length === 0 ? (
+        ) : vagoni?.length === 0 ? (
           <View>
             <Text style={{ color: "white", fontSize: 24 }}>
               Nema vagona za skeniranje
