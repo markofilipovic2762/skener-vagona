@@ -20,9 +20,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  AsyncStorage.getItem("userToken").then((token) =>
-    console.log("UserToken: ", token)
-  );
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -34,8 +31,6 @@ export default function LoginScreen() {
     try {
       const response = await login(username, password);
 
-      console.log("Login response:", response);
-      console.log("AccessToken bez data: ", response.accessToken);
       if (response.accessToken) {
         await AsyncStorage.setItem("userToken", response.accessToken);
         router.push("/");
