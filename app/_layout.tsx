@@ -9,7 +9,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator } from "react-native";
 import "react-native-reanimated";
-import { AuthProvider } from "./AuthContext";
 import StateProvider from "./VagonContext";
 
 export default function RootLayout() {
@@ -23,7 +22,6 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <StateProvider>
           <Stack>
@@ -36,6 +34,5 @@ export default function RootLayout() {
           <StatusBar style="auto" />
         </StateProvider>
       </ThemeProvider>
-    </AuthProvider>
   );
 }
