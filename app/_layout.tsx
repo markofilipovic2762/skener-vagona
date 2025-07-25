@@ -22,17 +22,30 @@ export default function RootLayout() {
   }
 
   return (
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <StateProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="scan" options={{ headerShown: false }} />
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <StateProvider>
+        <Stack>
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+              animation: "fade_from_bottom",
+              animationDuration: 2000,
+            }}
+          />
+          <Stack.Screen
+            name="scan"
+            options={{
+              headerShown: false,
+              animation: "slide_from_bottom",
+            }}
+          />
 
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-        </StateProvider>
-      </ThemeProvider>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </StateProvider>
+    </ThemeProvider>
   );
 }

@@ -17,7 +17,7 @@ import {
 import { useVagonState } from "../VagonContext";
 
 export default function HomeScreen() {
-  const {authorized} = useToken();
+  const { authorized, checkToken } = useToken();
   const { vagoni, setVagoni } = useVagonState();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -61,6 +61,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
+      checkToken();
+
       const fetch = async () => {
         try {
           const vagoni = await getVagoni();
@@ -72,7 +74,7 @@ export default function HomeScreen() {
         }
       };
       fetch();
-    }, [setVagoni])
+    }, [setVagoni, checkToken])
   );
 
   const handleContinue = () => {

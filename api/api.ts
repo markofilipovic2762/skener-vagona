@@ -111,3 +111,18 @@ export const login = async (username: string, password: string) => {
     alert(error);
   }
 };
+
+export const posaljiUBarzu = async (kluc: string, kontrolor: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/unos_proizvoda`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ kluc, kontrolor }),
+    });
+    return response.json();
+  } catch (error) {
+    console.error(error);
+  }
+};

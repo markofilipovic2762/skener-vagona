@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
+  Animated as RNAnimated,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -15,11 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  ALERT_TYPE,
-  AlertNotificationRoot,
-  Toast,
-} from "react-native-alert-notification";
+import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 
 export default function Barza() {
   const navigation = useNavigation();
@@ -29,10 +27,35 @@ export default function Barza() {
   const [scanFeedback, setScanFeedback] = useState("");
   const [scannedProducts, setScannedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({
+    title: "",
+    body: "",
+    type: "SUCCESS" as "SUCCESS" | "DANGER",
+  });
+  const [shouldNavigate, setShouldNavigate] = useState(false);
+  const fadeAnim = useRef(new RNAnimated.Value(0)).current;
 
-  const {userAd} = useToken()
-
+  const { userAd, authorized, checkToken } = useToken();
   const scannerInputRef = useRef<TextInput>(null);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (authorized === false) {
+      router.replace("/login");
+    }
+  }, [authorized, router]);
+
+  const fetchingProizvodi = useCallback(async () => {
+    fetchProizvodi();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchingProizvodi();
+    setRefreshing(false);
+  };
 
   const fetchProizvodi = async () => {
     setLoading(true);
@@ -48,6 +71,7 @@ export default function Barza() {
 
   useFocusEffect(
     useCallback(() => {
+      checkToken();
       fetchProizvodi();
     }, [])
   );
@@ -57,6 +81,40 @@ export default function Barza() {
       scannerInputRef.current.focus();
     }
   }, [productList]);
+
+  useEffect(() => {
+    if (shouldNavigate) {
+      const timer = setTimeout(() => {
+        setScannedProducts([]);
+        setProductList([]);
+        router.push("/");
+        setShouldNavigate(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldNavigate, router]);
+
+  const showCustomAlert = (
+    title: string,
+    body: string,
+    type: "SUCCESS" | "DANGER"
+  ) => {
+    setAlertMessage({ title, body, type });
+    setAlertVisible(true);
+    RNAnimated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      RNAnimated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setAlertVisible(false));
+    }, 3000);
+  };
 
   const handleScan = () => {
     const scannedCode = scannerValue.trim();
@@ -88,198 +146,219 @@ export default function Barza() {
   const handleSubmit = async () => {
     try {
       await posaljiBarzaProizvode(scannedProducts, userAd);
-
-      Toast.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: "Uspešno poslato",
-        textBody: `Ukupno skeniranih proizvoda: ${scannedProducts?.length}`,
-        autoClose: 2000,
-      });
-
-      setTimeout(() => {
-        setScannedProducts([]);
-        setProductList([]);
-        router.push("/");
-      }, 3000);
+      showCustomAlert(
+        "Uspešno poslato",
+        `Ukupno skeniranih proizvoda: ${scannedProducts?.length}`,
+        "SUCCESS"
+      );
+      setShouldNavigate(true);
     } catch (error: any) {
       console.error("Greška pri slanju proizvoda:", error);
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Greška",
-        textBody: `Došlo je do greške prilikom slanja proizvoda: ${error.message}`,
-      });
+      showCustomAlert(
+        "Greška",
+        `Došlo je do greške prilikom slanja proizvoda: ${error.message}`,
+        "DANGER"
+      );
     }
   };
 
   const remainingCount = productList?.length - scannedProducts?.length;
 
   return (
-    <SafeAreaView style={scanStyles.safeArea}>
-      <AlertNotificationRoot theme="dark">
+    <Animated.View
+      entering={FadeInRight.duration(500)}
+      exiting={FadeOutLeft.duration(500)}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView style={scanStyles.safeArea}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={scanStyles.container}
         >
-          <View style={scanStyles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={scanStyles.backButton}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={scanStyles.title}>Skeniranje barže</Text>
-            <View style={{ width: 24 }} />
-          </View>
-
-          {loading ? (
-            <View style={scanStyles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4A90E2" />
+          <ScrollView
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            <View style={scanStyles.header}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={scanStyles.backButton}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={scanStyles.title}>Skeniranje barže</Text>
+              <View style={{ width: 24 }} />
             </View>
-          ) : (
-            <>
-              {productList?.length > 0 ? (
-                <View style={scanStyles.productsContainer}>
-                  <View style={scanStyles.productsHeader}>
-                    <Text style={scanStyles.subtitle}>Proizvodi</Text>
-                    <View style={scanStyles.counterBadge}>
-                      <Text style={scanStyles.counterText}>
-                        {remainingCount} / {productList?.length} ostalo
-                      </Text>
-                    </View>
-                  </View>
 
-                  <ScrollView
-                    style={scanStyles.productsScroll}
-                    contentContainerStyle={scanStyles.productsScrollContent}
-                  >
-                    {productList?.map((p, index) => {
-                      const isScanned = scannedProducts.includes(p);
-                      return (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            scanStyles.card,
-                            isScanned && scanStyles.scannedCard,
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <View style={scanStyles.cardContent}>
-                            <Text style={scanStyles.productName}>{p}</Text>
-                            <View style={scanStyles.productInfoRow}>
-                              <Text style={scanStyles.productInfoLabel}>
-                                Code:
-                              </Text>
-                              <Text style={scanStyles.productInfo}>{p}</Text>
-                            </View>
-                            <View style={scanStyles.productInfoRow}>
-                              <Text style={scanStyles.productInfoLabel}>
-                                ID:
-                              </Text>
-                              <Text style={scanStyles.productInfo}>{p}</Text>
-                            </View>
-                          </View>
-                          {isScanned && (
-                            <View style={scanStyles.statusIcon}>
-                              <Ionicons
-                                name="checkmark-circle"
-                                size={24}
-                                color="#10B981"
-                              />
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              ) : (
-                <View>
-                  <Text style={{ color: "white", fontSize: 24 }}>
-                    Nema proizvoda za skeniranje
+            {alertVisible && (
+              <RNAnimated.View
+                style={[
+                  scanStyles.alertContainer,
+                  alertMessage.type === "SUCCESS"
+                    ? scanStyles.successFeedback
+                    : scanStyles.errorFeedback,
+                  { opacity: fadeAnim },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    alertMessage.type === "SUCCESS"
+                      ? "checkmark-circle"
+                      : "close-circle"
+                  }
+                  size={20}
+                  color={
+                    alertMessage.type === "SUCCESS" ? "#10B981" : "#EF4444"
+                  }
+                />
+                <View style={scanStyles.alertTextContainer}>
+                  <Text style={scanStyles.alertTitle}>
+                    {alertMessage.title}
                   </Text>
+                  <Text style={scanStyles.alertBody}>{alertMessage.body}</Text>
                 </View>
-              )}
+              </RNAnimated.View>
+            )}
 
-              {productList?.length > 0 && (
-                <View style={scanStyles.scannerContainer}>
-                  {scanFeedback !== "" && (
-                    <View
-                      style={[
-                        scanStyles.feedbackContainer,
-                        scanFeedback.includes("✅")
-                          ? scanStyles.successFeedback
-                          : scanFeedback.includes("⚠️")
-                          ? scanStyles.warningFeedback
-                          : scanStyles.errorFeedback,
-                      ]}
-                    >
-                      <Ionicons
-                        name={
-                          scanFeedback.includes("✅")
-                            ? "checkmark-circle"
-                            : scanFeedback.includes("⚠️")
-                            ? "warning"
-                            : "close-circle"
-                        }
-                        size={20}
-                        color={
-                          scanFeedback.includes("✅")
-                            ? "#10B981"
-                            : scanFeedback.includes("⚠️")
-                            ? "#F59E0B"
-                            : "#EF4444"
-                        }
-                      />
-                      <Text style={scanStyles.feedbackText}>
-                        {scanFeedback}
-                      </Text>
-                    </View>
-                  )}
-                  {scannedProducts?.length !== productList?.length && (
-                    <View style={scanStyles.scannerInputContainer}>
-                      <TextInput
-                        ref={scannerInputRef}
-                        style={scanStyles.hiddenInput}
-                        value={scannerValue}
-                        onChangeText={setScannerValue}
-                        onSubmitEditing={handleScan}
-                        returnKeyType="done"
-                        showSoftInputOnFocus={false}
-                        editable={true}
-                        autoFocus
-                        onBlur={() => {
-                          setTimeout(
-                            () => scannerInputRef.current?.focus(),
-                            100
-                          );
-                        }}
-                      />
-
-                      <View style={scanStyles.scannerVisual}>
-                        <Ionicons name="barcode" size={32} color="#4A90E2" />
-                        <Text style={scanStyles.scannerHint}>
-                          Skenirajte barkodove proizvoda
+            {loading ? (
+              <View style={scanStyles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4A90E2" />
+              </View>
+            ) : (
+              <>
+                {productList?.length > 0 ? (
+                  <View style={scanStyles.productsContainer}>
+                    <View style={scanStyles.productsHeader}>
+                      <Text style={scanStyles.subtitle}>Proizvodi</Text>
+                      <View style={scanStyles.counterBadge}>
+                        <Text style={scanStyles.counterText}>
+                          {remainingCount} / {productList?.length} ostalo
                         </Text>
                       </View>
                     </View>
-                  )}
-                </View>
-              )}
 
-              {scannedProducts?.length > 0 && (
-                <TouchableOpacity
-                  style={scanStyles.submitButton}
-                  onPress={handleSubmit}
-                >
-                  <Text style={scanStyles.submitButtonText}>Pošalji</Text>
-                  <Ionicons name="send" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-            </>
-          )}
+                    <ScrollView
+                      style={scanStyles.productsScroll}
+                      contentContainerStyle={scanStyles.productsScrollContent}
+                    >
+                      {productList?.map((p, index) => {
+                        const isScanned = scannedProducts.includes(p);
+                        return (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              scanStyles.card,
+                              isScanned && scanStyles.scannedCard,
+                            ]}
+                            activeOpacity={0.8}
+                          >
+                            <View style={scanStyles.cardContent}>
+                              <Text style={scanStyles.productName}>{p}</Text>
+                            </View>
+                            {isScanned && (
+                              <View style={scanStyles.statusIcon}>
+                                <Ionicons
+                                  name="checkmark-circle"
+                                  size={24}
+                                  color="#10B981"
+                                />
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={{ color: "white", fontSize: 24 }}>
+                      Nema proizvoda za skeniranje
+                    </Text>
+                  </View>
+                )}
+
+                {productList?.length > 0 && (
+                  <View style={scanStyles.scannerContainer}>
+                    {scanFeedback !== "" && (
+                      <View
+                        style={[
+                          scanStyles.feedbackContainer,
+                          scanFeedback.includes("✅")
+                            ? scanStyles.successFeedback
+                            : scanFeedback.includes("⚠️")
+                            ? scanStyles.warningFeedback
+                            : scanStyles.errorFeedback,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            scanFeedback.includes("✅")
+                              ? "checkmark-circle"
+                              : scanFeedback.includes("⚠️")
+                              ? "warning"
+                              : "close-circle"
+                          }
+                          size={20}
+                          color={
+                            scanFeedback.includes("✅")
+                              ? "#10B981"
+                              : scanFeedback.includes("⚠️")
+                              ? "#F59E0B"
+                              : "#EF4444"
+                          }
+                        />
+                        <Text style={scanStyles.feedbackText}>
+                          {scanFeedback}
+                        </Text>
+                      </View>
+                    )}
+                    {scannedProducts?.length !== productList?.length && (
+                      <View style={scanStyles.scannerInputContainer}>
+                        <TextInput
+                          ref={scannerInputRef}
+                          style={scanStyles.hiddenInput}
+                          value={scannerValue}
+                          onChangeText={setScannerValue}
+                          onSubmitEditing={handleScan}
+                          returnKeyType="done"
+                          showSoftInputOnFocus={false}
+                          editable={true}
+                          autoFocus
+                          onBlur={() => {
+                            setTimeout(
+                              () => scannerInputRef.current?.focus(),
+                              100
+                            );
+                          }}
+                        />
+
+                        <View style={scanStyles.scannerVisual}>
+                          <Ionicons name="barcode" size={32} color="#4A90E2" />
+                          <Text style={scanStyles.scannerHint}>
+                            Skenirajte barkodove proizvoda
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {scannedProducts?.length > 0 && (
+                  <TouchableOpacity
+                    style={scanStyles.submitButton}
+                    onPress={handleSubmit}
+                  >
+                    <Text style={scanStyles.submitButtonText}>Pošalji</Text>
+                    <Ionicons name="send" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </ScrollView>
         </KeyboardAvoidingView>
-      </AlertNotificationRoot>
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
@@ -291,6 +370,7 @@ const scanStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    marginTop: 10,
     backgroundColor: "#1E293B",
   },
   header: {
@@ -367,34 +447,16 @@ const scanStyles = StyleSheet.create({
     flex: 1,
   },
   productName: {
+    textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
     color: "#1F2937",
     marginBottom: 4,
   },
-  productInfoRow: {
-    flexDirection: "row",
-    marginBottom: 2,
-  },
-  productInfoLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginRight: 4,
-    fontWeight: "600",
-  },
-  productInfo: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
   scannedCard: {
     backgroundColor: "#ECFDF5",
     borderLeftWidth: 4,
     borderLeftColor: "#10B981",
-  },
-  damagedCard: {
-    backgroundColor: "#FEF2F2",
-    borderLeftWidth: 4,
-    borderLeftColor: "#EF4444",
   },
   statusIcon: {
     marginLeft: 8,
@@ -432,11 +494,6 @@ const scanStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  scannerLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4B5563",
-  },
   hiddenInput: {
     height: 0,
     opacity: 0,
@@ -469,61 +526,28 @@ const scanStyles = StyleSheet.create({
     fontWeight: "600",
     marginRight: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
+  alertContainer: {
+    flexDirection: "row",
     alignItems: "center",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 16,
-    width: "85%",
+  alertTextContainer: {
+    marginLeft: 8,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1F2937",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  modalProductName: {
+  alertTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
-    textAlign: "center",
-    marginBottom: 4,
   },
-  modalProductCode: {
+  alertBody: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  damageButton: {
-    backgroundColor: "#EF4444",
-    marginRight: 8,
-  },
-  cancelButton: {
-    backgroundColor: "#E5E7EB",
-  },
-  modalButtonText: {
-    color: "#3F3F3F",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 8,
+    color: "#1F2937",
   },
 });

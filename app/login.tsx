@@ -20,7 +20,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert("Greška", "Unesite korisničko ime i lozinku");
@@ -33,7 +32,7 @@ export default function LoginScreen() {
 
       if (response.accessToken) {
         await AsyncStorage.setItem("userToken", response.accessToken);
-        router.push("/");
+        router.replace("/");
       } else {
         Alert.alert("Greska", response.detail);
       }
